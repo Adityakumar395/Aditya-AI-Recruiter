@@ -110,6 +110,13 @@ st.markdown("""
         -webkit-text-fill-color: var(--text-color) !important;
         background-color: transparent !important;
     }
+    /* Background and Labels */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+      background-color: var(--background-color) !important;
+    }
+    label, p, span, .stMarkdown, .stText {
+      color: var(--text-color) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
