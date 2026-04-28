@@ -104,15 +104,11 @@ st.markdown("""
         box-shadow: 0 5px 10px rgba(0,0,0,0.2);
         color: #e0e0e0;
     }
-    /* Ultimate Fix for Dark & Light Mode Text Visibility */
-    div[data-testid="stTextInput"] input,
-    div[data-testid="stTextArea"] textarea,
-    div[data-baseweb="input"] input,
-    div[data-baseweb="textarea"] textarea,
-    .stTextInput input,
-    .stTextArea textarea {                 
-      color: var(--text-color) !important;
-      -webkit-text-fill-color: var(--text-color) !important;
+    /* Dark & Light Mode Fix */
+    input, textarea, .stTextInput input,.stTextArea textarea {
+        color: var(--text-color) !important;
+        -webkit-text-fill-color: var(--text-color) !important;
+        background-color: transparent !important;
     }
     </style>
     """, unsafe_allow_html=True)
