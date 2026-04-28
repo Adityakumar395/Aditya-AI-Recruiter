@@ -104,6 +104,13 @@ st.markdown("""
         box-shadow: 0 5px 10px rgba(0,0,0,0.2);
         color: #e0e0e0;
     }
+    /* Fix for Dark & Light Mode Text Visibility */
+    div[data-baseweb="input"]input,
+    div[data-baseweb="textarea"]textarea {
+      color: var(--text-color) !important;
+      background-color: tranparent !important;
+      -webkit-text-fill-color: var(--text-color) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
