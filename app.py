@@ -32,7 +32,7 @@ st.markdown("""
     <style>
     /* Main Background Gradient */
     .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4ebf5 100%);
+     
     }
     
     /* ADDED: Border styling for Input Boxes (Username, Password) */
@@ -40,7 +40,7 @@ st.markdown("""
         border: 2px solid #1e3a8a !important; /* Dark blue border */
         border-radius: 8px !important;
         padding: 10px !important;
-        background-color: white !important;
+       
     }
     
     /* ADDED: Border styling for Job Description Text Area */
@@ -48,7 +48,7 @@ st.markdown("""
         border: 2px solid #28a745 !important; /* Green border */
         border-radius: 8px !important;
         padding: 10px !important;
-        background-color: white !important;
+      
     }
 
     /* ADDED: Border styling for File Uploader Box */
@@ -56,13 +56,13 @@ st.markdown("""
         border: 2px solid #28a745 !important; /* Purple dashed border */
         border-radius: 8px !important;
         padding: 15px !important;
-        background-color: white !important;
+        
     }
     
     /* Premium Metric Cards */
     [data-testid="stMetricValue"] { color: #1e3a8a; font-size: 35px; font-weight: 900; }
     .stMetric { 
-        background-color: #ffffff; 
+        
         padding: 20px; 
         border-radius: 15px; 
         box-shadow: 0 10px 20px rgba(0,0,0,0.08);
