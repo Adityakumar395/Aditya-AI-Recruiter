@@ -9,19 +9,50 @@ import smtplib
 from PIL import Image
 from email.message import EmailMessage
 from datetime import datetime
-from groq import Groq
 from dotenv import load_dotenv
+
+import sys
+import asyncio
+
+# Fix for Windows asyncio Proactor socket issue in Python 3.13
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception:
+        pass
 
 # --- 1. SECURITY & CONFIG ---
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+
+# Authentication Credentials exclusively from .env
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+# Email SMTP Config exclusively from .env
+SENDER_NAME = os.getenv("SENDER_NAME", "Recruiter")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PW = os.getenv("SENDER_PW")
 
-# Initialize Groq Client
-client = Groq(api_key=GROQ_API_KEY)
+# Initialize Groq AI Client
+ai_client = None
+ai_model = GROQ_MODEL
 
-icon_image = Image.open("logo.jpeg")
+if GROQ_API_KEY and GROQ_API_KEY.strip() and not GROQ_API_KEY.startswith("your_"):
+    try:
+        from openai import OpenAI
+        ai_client = OpenAI(
+            base_url=GROQ_BASE_URL,
+            api_key=GROQ_API_KEY,
+        )
+    except Exception as err:
+        pass
+
+
+logo_path = os.path.join(os.path.dirname(__file__), "logo.jpeg") if os.path.exists(os.path.join(os.path.dirname(__file__), "logo.jpeg")) else "logo.jpeg"
+icon_image = Image.open(logo_path) if os.path.exists(logo_path) else None
 
 # Set page configuration
 st.set_page_config(page_title="Aditya's AI Recruiter",
@@ -121,10 +152,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 3. DATABASE MANAGEMENT ---
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ats_pro_v4.db')
 
 
 def init_db():
-    conn = sqlite3.connect('ats_pro_v4.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS candidates 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -137,7 +169,7 @@ def init_db():
 
 
 def save_to_db(file_name, actual_name, email, jd_s, ats_s, matched, missing, edu, exp, proj, addr):
-    conn = sqlite3.connect('ats_pro_v4.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""INSERT INTO candidates 
                  (file_name, actual_name, email, jd_score, ats_score, matched, missing, edu, exp, proj, addr, date) 
@@ -148,11 +180,12 @@ def save_to_db(file_name, actual_name, email, jd_s, ats_s, matched, missing, edu
 
 
 def delete_candidate(id):
-    conn = sqlite3.connect('ats_pro_v4.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("DELETE FROM candidates WHERE id = ?", (id,))
     conn.commit()
     conn.close()
+
 
 # --- 4. ENGINE FUNCTIONS ---
 
@@ -216,13 +249,16 @@ def get_ai_analysis(jd, resume_text):
     JD: {jd}
     Resume: {resume_text}
     """
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+    if not ai_client:
+        raise ValueError("No AI API client configured! Please check GROQ_API_KEY in your .env file.")
+
+    response = ai_client.chat.completions.create(
+        model=ai_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
-        seed=42  # THIS FIXES THE RANDOM ATS SCORE ISSUE
     )
     return response.choices[0].message.content
+
 
 
 def send_invitation_email(target, actual_name):
@@ -230,7 +266,7 @@ def send_invitation_email(target, actual_name):
     try:
         msg = EmailMessage()
         msg['Subject'] = " Interview Invitation: Next Steps for Your Application "
-        msg['From'] = f"Aditya Yadav <{SENDER_EMAIL}>"
+        msg['From'] = f"{SENDER_NAME} <{SENDER_EMAIL}>"
         msg['To'] = target
         msg.set_content(f"Dear {actual_name},\n\nThank you for your interest in joining our team. We have carefully reviewed your application and resume. We are pleased to inform you that your profile has been shortlisted for the next stage of our selection process. \n\nAs the next step,we would like to schedule an interview with you to discuss your past projects,experience,and the role in more detail. We aim to schedule this interview within the next 3 days,please stay connected!\n\nBest Regards,\nHR Team")
 
@@ -266,7 +302,9 @@ def login_screen():
         user = st.text_input("**Username**")
         pw = st.text_input("**Password**", type="password")
         if st.button("Access Dashboard", use_container_width=True):
-            if user == "admin" and pw == "password123":
+            if not ADMIN_USERNAME or not ADMIN_PASSWORD:
+                st.error("❌ Portal credentials are not configured. Please set ADMIN_USERNAME and ADMIN_PASSWORD in your .env file.")
+            elif user == ADMIN_USERNAME and pw == ADMIN_PASSWORD:
                 st.session_state['auth'] = True
                 st.rerun()
             else:
@@ -311,15 +349,31 @@ def main_dashboard():
                         # 2. DOCX Extract Logic
                         elif file_ext == "docx":
                             doc = docx.Document(file)
-                            resume_text = "\n".join(
-                                [para.text for para in doc.paragraphs])
+                            doc_parts = [para.text for para in doc.paragraphs if para.text.strip()]
+                            for tbl in doc.tables:
+                                for row in tbl.rows:
+                                    row_text = " | ".join([cell.text.strip() for cell in row.cells if cell.text.strip()])
+                                    if row_text:
+                                        doc_parts.append(row_text)
+                            resume_text = "\n".join(doc_parts)
                         # 3. TXT Extract Logic
                         elif file_ext == "txt":
                             resume_text = file.read().decode("utf-8")
 
                         if resume_text.strip():
-                            raw_analysis = get_ai_analysis(
-                                st.session_state['jd_input'], resume_text)
+                            try:
+                                raw_analysis = get_ai_analysis(
+                                    st.session_state['jd_input'], resume_text)
+                            except Exception as api_err:
+                                err_str = str(api_err)
+                                if "429" in err_str or "rate limit" in err_str.lower():
+                                    st.error(f"❌ Groq Rate Limit Exceeded for {file.name}: Rate limit reached. Please check your Groq quota or retry in a few moments.")
+                                else:
+                                    st.error(f"❌ AI Error analyzing {file.name}: {err_str}")
+                                continue
+                        else:
+                            st.warning(f"⚠️ Could not extract text from {file.name}")
+                            continue
 
                         def parse_tag(tag, source):
                             match = re.search(
@@ -412,7 +466,7 @@ def main_dashboard():
     elif choice == "Database History":
         st.markdown(
             "<h1 style='color: #1e3a8a;'>📁 Candidate Records</h1>", unsafe_allow_html=True)
-        conn = sqlite3.connect('ats_pro_v4.db')
+        conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query(
             "SELECT * FROM candidates ORDER BY id ASC", conn)
         conn.close()

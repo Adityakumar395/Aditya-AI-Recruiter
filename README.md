@@ -6,7 +6,7 @@
 
 ## 📌 Overview
 
-**Aditya's AI Recruiter** is a full-stack recruitment automation tool powered by **LLaMA 3.3 70B via Groq API**. It allows recruiters to paste a Job Description, upload multiple resumes (PDF, DOCX, TXT), and instantly get a ranked list of candidates with detailed AI-generated analysis — including JD match score, ATS health score, matched/missing skills, education, experience, and projects.
+**Aditya's AI Recruiter** is a full-stack recruitment automation tool powered by **Groq API**. It allows recruiters to paste a Job Description, upload multiple resumes (PDF, DOCX, TXT), and instantly get a ranked list of candidates with detailed AI-generated analysis — including JD match score, ATS health score, matched/missing skills, education, experience, and projects.
 
 All results are saved to a **SQLite database** and recruiters can send **automated interview invitation emails** directly from the dashboard.
 
@@ -16,7 +16,7 @@ All results are saved to a **SQLite database** and recruiters can send **automat
 
 | Feature | Description |
 |---|---|
-| 🧠 **AI Resume Analysis** | Deep contextual analysis using LLaMA 3.3-70b-versatile via Groq |
+| 🧠 **AI Resume Analysis** | Deep contextual analysis using AI models via Groq (`openai/gpt-oss-120b`) |
 | 📊 **JD Match Score** | Scores candidate against job description (Skills 60pts + Education 20pts + Experience 20pts) |
 | ✅ **ATS Health Score** | Evaluates resume structure, formatting, content quality, spelling & grammar |
 | 📄 **Multi-Format Support** | Accepts PDF, DOCX, and TXT resumes simultaneously |
@@ -34,7 +34,7 @@ All results are saved to a **SQLite database** and recruiters can send **automat
 |---|---|
 | **Python 3.13** | Core programming language |
 | **Streamlit** | Web application framework |
-| **Groq API** | LLM inference (LLaMA 3.3-70B model) |
+| **Groq API** | LLM inference (`openai/gpt-oss-120b`) |
 | **PyPDF2** | PDF text extraction |
 | **python-docx** | DOCX text extraction |
 | **SQLite3** | Local database for candidate records |
@@ -48,7 +48,7 @@ All results are saved to a **SQLite database** and recruiters can send **automat
 ## 📁 Project Structure
 
 ```
-Aditya-AI-Recruiteres/
+Aditya-AI-Recruiter/
 │
 ├── app.py                  # Main application file
 ├── logo.jpeg               # App logo/icon
@@ -65,8 +65,8 @@ Aditya-AI-Recruiteres/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Adityakumar395/Aditya-AI-Recruiteres.git
-cd Aditya-AI-Recruiteres
+git clone https://github.com/Adityakumar395/Aditya-AI-Recruiter.git
+cd Aditya-AI-Recruiter
 ```
 
 ### Step 2: Create a Virtual Environment
@@ -90,7 +90,7 @@ pip install -r requirements.txt
 Or install manually:
 
 ```bash
-pip install streamlit groq PyPDF2 python-docx pandas pillow python-dotenv
+pip install streamlit openai PyPDF2 python-docx pandas pillow python-dotenv
 ```
 
 ### Step 4: Set Up Environment Variables
@@ -99,12 +99,14 @@ Create a `.env` file in the root directory:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=openai/gpt-oss-120b
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 SENDER_EMAIL=your_gmail_address@gmail.com
 SENDER_PW=your_gmail_app_password_here
 ```
 
 > **How to get these:**
-> - **GROQ_API_KEY** → Sign up at [console.groq.com](https://console.groq.com) and generate a free API key
+> - **GROQ_API_KEY** → Sign up at [console.groq.com](https://console.groq.com) and generate an API key
 > - **SENDER_EMAIL** → Your Gmail address
 > - **SENDER_PW** → Generate an [App Password](https://myaccount.google.com/apppasswords) from your Google Account (2FA must be enabled)
 
@@ -120,12 +122,12 @@ The app will open at `http://localhost:8501`
 
 ## 🔐 Login Credentials
 
+Set your desired credentials in your `.env` file:
+```env
+ADMIN_USERNAME=your_username
+ADMIN_PASSWORD=your_password
 ```
-Username: admin
-Password: password123
-```
-
-> ⚠️ Change these in `app.py` before deploying to production.
+*(Never commit `.env` to version control)*
 
 ---
 
@@ -220,4 +222,4 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-<p align="center">Made with ❤️ by Aditya Kumar | Powered by Groq & LLaMA 3.3</p>
+<p align="center">Made with ❤️ by Aditya Kumar | Powered by Groq</p>
